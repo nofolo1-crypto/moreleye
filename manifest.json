@@ -1,0 +1,19 @@
+{
+  "name": "MorelEye — AR Morel Detector",
+  "short_name": "MorelEye",
+  "description": "AI-powered morel mushroom and host tree detection using your phone camera.",
+  "start_url": "/index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#050f08",
+  "theme_color": "#050f08",
+  "categories": ["lifestyle", "utilities", "food"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/scan.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow" }
+  ],
+  "permissions": ["camera"]
+}
