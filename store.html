@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>MorelEye — Field Store</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Exo+2:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f08;
+  --bg2: #111a0e;
+  --bg3: #182314;
+  --green: #00ff88;
+  --green-d: #00cc6a;
+  --amber: #ffaa00;
+  --gold: #e8c84a;
+  --blue: #44aaff;
+  --red: #ff4455;
+  --text: rgba(220,240,225,0.92);
+  --muted: rgba(160,210,175,0.5);
+  --border: rgba(0,255,136,0.14);
+  --safe-top: env(safe-area-inset-top,0px);
+  --safe-bot: env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;min-height:100%;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── TOP NAV ── */
+#topNav{position:sticky;top:0;z-index:50;background:rgba(10,15,8,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding-top:var(--safe-top)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:1.3rem;color:#fff;letter-spacing:.5px}
+.nav-logo em{color:var(--green);font-style:italic}
+.nav-back{background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:2px;padding:6px 12px;cursor:pointer}
+.nav-back:active{background:var(--bg3)}
+
+/* ── HERO ── */
+.hero{padding:32px 18px 24px;text-align:center;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,255,136,.06) 0%,transparent 70%);pointer-events:none}
+.hero-tag{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:4px;color:var(--green);opacity:.6;text-transform:uppercase;margin-bottom:10px}
+.hero-title{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,6vw,2.6rem);color:#fff;line-height:1.15;margin-bottom:10px}
+.hero-title em{color:var(--green);font-style:italic}
+.hero-sub{font-size:.82rem;font-weight:300;color:var(--muted);line-height:1.6;max-width:340px;margin:0 auto 18px}
+.hero-pills{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.pill{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:2px;padding:4px 12px;border-radius:20px;text-transform:uppercase}
+.pill-green{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:var(--green)}
+.pill-amber{background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.25);color:var(--amber)}
+.pill-blue{background:rgba(68,170,255,.1);border:1px solid rgba(68,170,255,.25);color:var(--blue)}
+
+/* ── OFFLINE BANNER ── */
+.offline-banner{margin:16px 16px 0;padding:12px 16px;background:rgba(68,170,255,.08);border:1px solid rgba(68,170,255,.25);border-left:3px solid var(--blue);border-radius:5px}
+.ob-title{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:3px;color:var(--blue);margin-bottom:4px}
+.ob-text{font-size:.76rem;font-weight:300;color:rgba(180,215,255,.8);line-height:1.5}
+
+/* ── SECTION ── */
+.section{padding:22px 16px 8px}
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sec-icon{font-size:1.2rem}
+.sec-title{font-family:'DM Serif Display',serif;font-size:1.15rem;color:#fff}
+.sec-count{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--muted);margin-left:auto}
+
+/* ── BUNDLE CARD (featured) ── */
+.bundle{margin:0 16px 8px;background:linear-gradient(135deg,rgba(24,35,20,.9) 0%,rgba(15,24,12,.9) 100%);border:1px solid rgba(232,200,74,.3);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.bundle::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.bundle-tag{font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:8px}
+.bundle-title{font-family:'DM Serif Display',serif;font-size:1.2rem;color:#fff;margin-bottom:5px}
+.bundle-desc{font-size:.76rem;font-weight:300;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.bundle-items{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.bi{font-size:.62rem;padding:3px 8px;background:rgba(232,200,74,.08);border:1px solid rgba(232,200,74,.18);border-radius:3px;color:rgba(232,200,74,.8)}
+.bundle-foot{display:flex;align-items:center;justify-content:space-between}
+.bundle-price{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--gold)}
+.bundle-price span{font-size:.7rem;font-family:'Share Tech Mono',monospace;color:var(--muted);text-decoration:line-through;margin-right:6px;vertical-align:middle}
+.btn-buy{padding:11px 22px;background:var(--gold);border:none;border-radius:5px;color:#1a1400;font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:2px;font-weight:bold;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.btn-buy:active{transform:scale(.97)}
+.btn-buy.owned{background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);color:var(--green);cursor:default}
+
+/* ── PACK GRID ── */
+.pack-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+
+/* ── PACK CARD ── */
+.pack{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;overflow:hidden;transition:border-color .2s}
+.pack:active{border-color:rgba(0,255,136,.35)}
+.pack.owned{border-color:rgba(0,255,136,.3)}
+.pack.featured{border-color:rgba(232,200,74,.25)}
+.pack-emoji{font-size:2rem;margin-bottom:8px;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
+.pack-name{font-family:'DM Serif Display',serif;font-size:.95rem;color:#fff;line-height:1.2;margin-bottom:4px}
+.pack-type{font-family:'Share Tech Mono',monospace;font-size:.52rem;letter-spacing:2px;margin-bottom:6px;text-transform:uppercase}
+.pack-type.mushroom{color:rgba(255,170,0,.7)}
+.pack-type.plant{color:rgba(68,170,255,.7)}
+.pack-type.medicinal{color:rgba(180,100,255,.7)}
+.pack-desc{font-size:.68rem;font-weight:300;color:var(--muted);line-height:1.4;margin-bottom:10px}
+.pack-features{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.pf{font-size:.62rem;color:rgba(180,220,190,.65);padding-left:10px;position:relative}
+.pf::before{content:'·';position:absolute;left:0;color:var(--green)}
+.pack-foot{display:flex;align-items:center;justify-content:space-between}
+.pack-price{font-family:'DM Serif Display',serif;font-size:1.05rem;color:var(--text)}
+.pack-price.free{color:var(--green);font-size:.75rem;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+.btn-get{padding:7px 14px;border:none;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:2px;font-weight:bold;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.btn-get.buy{background:var(--green);color:var(--bg)}
+.btn-get.owned{background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.25);color:var(--green);cursor:default}
+.btn-get.locked{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-get:active:not(.owned){transform:scale(.96)}
+
+/* Owned badge */
+.owned-badge{position:absolute;top:10px;right:10px;background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:.48rem;letter-spacing:2px;color:var(--green);padding:2px 6px;text-transform:uppercase}
+
+/* ── OFFLINE SECTION ── */
+.offline-section{margin:8px 16px 0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.os-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.os-title{font-family:'DM Serif Display',serif;font-size:1rem;color:#fff}
+.os-badge{font-family:'Share Tech Mono',monospace;font-size:.52rem;letter-spacing:2px;padding:3px 8px;background:rgba(68,170,255,.12);border:1px solid rgba(68,170,255,.25);border-radius:3px;color:var(--blue);text-transform:uppercase;margin-left:auto}
+.os-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.os-item:last-child{border-bottom:none}
+.os-icon{font-size:1.3rem;flex-shrink:0}
+.os-info{flex:1}
+.os-name{font-size:.82rem;font-weight:400;color:var(--text);margin-bottom:2px}
+.os-detail{font-size:.68rem;font-weight:300;color:var(--muted)}
+.os-action{flex-shrink:0}
+.btn-dl{padding:7px 12px;background:rgba(68,170,255,.12);border:1px solid rgba(68,170,255,.25);border-radius:4px;color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:1px;cursor:pointer;white-space:nowrap}
+.btn-dl.downloaded{background:rgba(0,255,136,.1);border-color:rgba(0,255,136,.25);color:var(--green)}
+.dl-bar{height:2px;background:rgba(68,170,255,.15);border-radius:2px;margin-top:6px;overflow:hidden;display:none}
+.dl-bar.show{display:block}
+.dl-fill{height:100%;background:var(--blue);width:0;transition:width .3s ease;border-radius:2px}
+
+/* ── RESTORE / FOOTER ── */
+.store-footer{padding:20px 16px calc(var(--safe-bot) + 24px);text-align:center;border-top:1px solid var(--border);margin-top:24px}
+.btn-restore{background:transparent;border:none;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:2px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.footer-legal{font-size:.58rem;color:rgba(100,140,110,.4);line-height:1.8;margin-top:12px;max-width:300px;margin-left:auto;margin-right:auto}
+
+/* Purchase modal */
+#purchaseModal{position:fixed;inset:0;z-index:200;display:none;align-items:flex-end;justify-content:center}
+#purchaseModal.show{display:flex}
+.pm-back{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+.pm-sheet{position:relative;background:rgba(12,20,10,.98);border-top:1px solid var(--border);border-radius:16px 16px 0 0;padding:20px 22px calc(var(--safe-bot)+22px);width:100%;max-width:500px;animation:shUp .3s ease}
+@keyframes shUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.pm-handle{width:32px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.pm-emoji{font-size:2.5rem;text-align:center;margin-bottom:10px}
+.pm-name{font-family:'DM Serif Display',serif;font-size:1.3rem;color:#fff;text-align:center;margin-bottom:5px}
+.pm-price{font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--muted);text-align:center;margin-bottom:16px}
+.pm-features{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.pmf{display:flex;align-items:flex-start;gap:10px;font-size:.78rem;font-weight:300;color:rgba(200,230,210,.8);line-height:1.4}
+.pmf-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:5px}
+.btn-confirm{width:100%;padding:15px;background:var(--green);border:none;border-radius:5px;color:var(--bg);font-family:'Share Tech Mono',monospace;font-size:.88rem;letter-spacing:3px;font-weight:bold;text-transform:uppercase;cursor:pointer;margin-bottom:10px;box-shadow:0 0 20px rgba(0,255,136,.25)}
+.btn-cancel{width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:.75rem;letter-spacing:2px;cursor:pointer}
+
+/* Success toast */
+#toast{position:fixed;bottom:calc(var(--safe-bot)+100px);left:50%;transform:translateX(-50%);background:var(--green);color:var(--bg);font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:2px;padding:10px 22px;border-radius:4px;box-shadow:0 0 24px rgba(0,255,136,.4);display:none;white-space:nowrap;animation:toastIn .3s ease;z-index:300}
+#toast.show{display:block}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+</style>
+</head>
+<body>
+
+<div id="topNav">
+  <div class="nav-inner">
+    <div class="nav-logo">Morel<em>Eye</em> Store</div>
+    <button class="nav-back" onclick="history.back()">◂ SCANNER</button>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-tag">Field Intelligence Packs</div>
+  <div class="hero-title">Expand Your<br><em>Forager's Eye</em></div>
+  <div class="hero-sub">Each pack unlocks AI detection for a new species — mushrooms, edible plants, and medicinal herbs. Works offline once downloaded.</div>
+  <div class="hero-pills">
+    <div class="pill pill-green">🍄 Mushrooms</div>
+    <div class="pill pill-blue">🌿 Edible Plants</div>
+    <div class="pill pill-amber">🌱 Medicinal Herbs</div>
+  </div>
+</div>
+
+<div class="offline-banner">
+  <div class="ob-title">📡 Offline Mode Available</div>
+  <div class="ob-text">All purchased packs can be downloaded for offline use — no signal needed in the field. Download before you go.</div>
+</div>
+
+<!-- BUNDLE -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-icon">⭐</span>
+    <span class="sec-title">Complete Bundle</span>
+  </div>
+</div>
+<div class="bundle" onclick="openPurchase('bundle')">
+  <div class="bundle-tag">Best Value · Save 60%</div>
+  <div class="bundle-title">The Full Forager</div>
+  <div class="bundle-desc">Every mushroom pack, every plant pack, every medicinal herb — all offline downloads included. One purchase, everything unlocked forever.</div>
+  <div class="bundle-items">
+    <span class="bi">9 Mushroom Packs</span>
+    <span class="bi">6 Plant Packs</span>
+    <span class="bi">4 Medicinal Packs</span>
+    <span class="bi">Offline Maps</span>
+    <span class="bi">Season Alerts</span>
+  </div>
+  <div class="bundle-foot">
+    <div class="bundle-price"><span>$49.99</span>$19.99</div>
+    <button class="btn-buy" id="bundle-btn">Buy Bundle</button>
+  </div>
+</div>
+
+<!-- MUSHROOM PACKS -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-icon">🍄</span>
+    <span class="sec-title">Mushroom Packs</span>
+    <span class="sec-count">9 PACKS</span>
+  </div>
+</div>
+<div class="pack-grid">
+
+  <div class="pack owned" onclick="openPurchase('morel')">
+    <div class="owned-badge">OWNED</div>
+    <span class="pack-emoji">🍄</span>
+    <div class="pack-name">Morel</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Yellow, grey &amp; black morels with host tree navigation.</div>
+    <div class="pack-features"><div class="pf">AR tree overlay</div><div class="pf">Search circle nav</div><div class="pf">False morel alert</div></div>
+    <div class="pack-foot"><div class="pack-price free">INCLUDED</div><button class="btn-get owned">✓ Active</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('chicken')">
+    <span class="pack-emoji">🧡</span>
+    <div class="pack-name">Chicken of the Woods</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Bright orange shelf fungus on oak, cherry &amp; locust.</div>
+    <div class="pack-features"><div class="pf">Shelf detection</div><div class="pf">Host tree ID</div><div class="pf">Age &amp; freshness</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('chanterelle')">
+    <span class="pack-emoji">🌼</span>
+    <div class="pack-name">Chanterelle</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Golden chanterelles in oak and beech forest floors.</div>
+    <div class="pack-features"><div class="pf">False gills ID</div><div class="pf">Jack-o-lantern alert</div><div class="pf">Habitat mapping</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('oyster')">
+    <span class="pack-emoji">🤍</span>
+    <div class="pack-name">Oyster</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Oyster mushrooms on dead hardwood — year-round find.</div>
+    <div class="pack-features"><div class="pf">Dead wood detection</div><div class="pf">Cluster sizing</div><div class="pf">Angel wing alert</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('hen')">
+    <span class="pack-emoji">🌿</span>
+    <div class="pack-name">Hen of the Woods</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Maitake at the base of oaks — fall's best find.</div>
+    <div class="pack-features"><div class="pf">Oak base detection</div><div class="pf">Maitake vs. Berkeley's</div><div class="pf">Harvest size guide</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('lions')">
+    <span class="pack-emoji">🦁</span>
+    <div class="pack-name">Lion's Mane</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Shaggy white cascades on dead oak and beech.</div>
+    <div class="pack-features"><div class="pf">Cascade detection</div><div class="pf">Freshness gauge</div><div class="pf">Lookalike alerts</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('puffball')">
+    <span class="pack-emoji">⚪</span>
+    <div class="pack-name">Giant Puffball</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">White giants in meadows and forest edges.</div>
+    <div class="pack-features"><div class="pf">Size estimation</div><div class="pf">Amanita egg alert</div><div class="pf">Interior test guide</div></div>
+    <div class="pack-foot"><div class="pack-price">$1.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('matsutake')">
+    <span class="pack-emoji">🍂</span>
+    <div class="pack-name">Matsutake</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Prized pine mushroom under conifers in fall.</div>
+    <div class="pack-features"><div class="pf">Pine duff detection</div><div class="pf">Spice aroma notes</div><div class="pf">Tricholoma ID</div></div>
+    <div class="pack-foot"><div class="pack-price">$3.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('turkey')">
+    <span class="pack-emoji">🦃</span>
+    <div class="pack-name">Turkey Tail</div>
+    <div class="pack-type mushroom">Mushroom</div>
+    <div class="pack-desc">Medicinal polypore on hardwood logs — year-round.</div>
+    <div class="pack-features"><div class="pf">Pore surface check</div><div class="pf">False turkey tail</div><div class="pf">Prep &amp; dry guide</div></div>
+    <div class="pack-foot"><div class="pack-price">$1.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+</div>
+
+<!-- EDIBLE PLANTS -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-icon">🌿</span>
+    <span class="sec-title">Edible Plant Packs</span>
+    <span class="sec-count">6 PACKS</span>
+  </div>
+</div>
+<div class="pack-grid">
+
+  <div class="pack" onclick="openPurchase('ramps')">
+    <span class="pack-emoji">🧅</span>
+    <div class="pack-name">Ramps &amp; Wild Onion</div>
+    <div class="pack-type plant">Edible Plant</div>
+    <div class="pack-desc">Wild leeks in moist hardwood forest floors.</div>
+    <div class="pack-features"><div class="pf">Leaf shape ID</div><div class="pf">Lily-of-valley alert</div><div class="pf">Harvest window</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('berries')">
+    <span class="pack-emoji">🫐</span>
+    <div class="pack-name">Wild Berries</div>
+    <div class="pack-type plant">Edible Plant</div>
+    <div class="pack-desc">Blackberries, blueberries, elderberries, serviceberries.</div>
+    <div class="pack-features"><div class="pf">Ripeness detection</div><div class="pf">Pokeweed alert</div><div class="pf">Nightshade warning</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('greens')">
+    <span class="pack-emoji">🥬</span>
+    <div class="pack-name">Spring Greens</div>
+    <div class="pack-type plant">Edible Plant</div>
+    <div class="pack-desc">Dandelion, wood sorrel, chickweed, violet leaves.</div>
+    <div class="pack-features"><div class="pf">Leaf ID at ground</div><div class="pf">Season window</div><div class="pf">Toxic lookalikes</div></div>
+    <div class="pack-foot"><div class="pack-price">$1.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('nuts')">
+    <span class="pack-emoji">🌰</span>
+    <div class="pack-name">Nuts &amp; Seeds</div>
+    <div class="pack-type plant">Edible Plant</div>
+    <div class="pack-desc">Hickory, black walnut, hazelnut, pawpaw, persimmon.</div>
+    <div class="pack-features"><div class="pf">Tree ID from bark</div><div class="pf">Ripeness check</div><div class="pf">Processing guide</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('fiddlehead')">
+    <span class="pack-emoji">🌱</span>
+    <div class="pack-name">Fiddleheads &amp; Ferns</div>
+    <div class="pack-type plant">Edible Plant</div>
+    <div class="pack-desc">Ostrich fern fiddleheads in spring creek bottoms.</div>
+    <div class="pack-features"><div class="pf">Fern species check</div><div class="pf">Harvest stage ID</div><div class="pf">Toxic fern alerts</div></div>
+    <div class="pack-foot"><div class="pack-price">$1.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('roots')">
+    <span class="pack-emoji">🥕</span>
+    <div class="pack-name">Roots &amp; Tubers</div>
+    <div class="pack-type plant">Edible Plant</div>
+    <div class="pack-desc">Cattail, Jerusalem artichoke, groundnut, burdock.</div>
+    <div class="pack-features"><div class="pf">Above-ground ID</div><div class="pf">Water hemlock alert</div><div class="pf">Prep instructions</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+</div>
+
+<!-- MEDICINAL -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-icon">🌿</span>
+    <span class="sec-title">Medicinal &amp; Herbal</span>
+    <span class="sec-count">4 PACKS</span>
+  </div>
+</div>
+<div class="pack-grid">
+
+  <div class="pack" onclick="openPurchase('adaptogens')">
+    <span class="pack-emoji">🍵</span>
+    <div class="pack-name">Adaptogens</div>
+    <div class="pack-type medicinal">Medicinal</div>
+    <div class="pack-desc">Reishi, chaga, turkey tail — the medicinal big three.</div>
+    <div class="pack-features"><div class="pf">Growth stage ID</div><div class="pf">Harvest guide</div><div class="pf">Preparation notes</div></div>
+    <div class="pack-foot"><div class="pack-price">$3.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('herbs')">
+    <span class="pack-emoji">🌾</span>
+    <div class="pack-name">Wild Herbs</div>
+    <div class="pack-type medicinal">Medicinal</div>
+    <div class="pack-desc">Yarrow, St. John's wort, goldenrod, boneset, echinacea.</div>
+    <div class="pack-features"><div class="pf">Bloom stage ID</div><div class="pf">Part used guide</div><div class="pf">Lookalike warnings</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('bark')">
+    <span class="pack-emoji">🌲</span>
+    <div class="pack-name">Medicinal Trees</div>
+    <div class="pack-type medicinal">Medicinal</div>
+    <div class="pack-desc">Slippery elm, black cherry, elderberry, witch hazel.</div>
+    <div class="pack-features"><div class="pf">Bark ID from camera</div><div class="pf">Harvest safety</div><div class="pf">Traditional uses</div></div>
+    <div class="pack-foot"><div class="pack-price">$2.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+  <div class="pack" onclick="openPurchase('teas')">
+    <span class="pack-emoji">🫖</span>
+    <div class="pack-name">Teas &amp; Tinctures</div>
+    <div class="pack-type medicinal">Medicinal</div>
+    <div class="pack-desc">Mint, lemon balm, self-heal, mullein, red clover.</div>
+    <div class="pack-features"><div class="pf">Leaf &amp; flower ID</div><div class="pf">Harvest tips</div><div class="pf">Preparation guide</div></div>
+    <div class="pack-foot"><div class="pack-price">$1.99</div><button class="btn-get buy">Get</button></div>
+  </div>
+
+</div>
+
+<!-- OFFLINE DOWNLOADS -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-icon">📡</span>
+    <span class="sec-title">Offline Downloads</span>
+  </div>
+</div>
+<div class="offline-section">
+  <div class="os-head">
+    <span style="font-size:1rem">📥</span>
+    <div class="os-title">Download for Field Use</div>
+    <div class="os-badge">No Signal Needed</div>
+  </div>
+
+  <div class="os-item">
+    <div class="os-icon">🍄</div>
+    <div class="os-info">
+      <div class="os-name">Morel AI Model</div>
+      <div class="os-detail">On-device detection · 38 MB</div>
+      <div class="dl-bar" id="bar-morel"><div class="dl-fill" id="fill-morel"></div></div>
+    </div>
+    <div class="os-action"><button class="btn-dl downloaded" id="btn-morel">✓ Ready</button></div>
+  </div>
+
+  <div class="os-item">
+    <div class="os-icon">🌳</div>
+    <div class="os-info">
+      <div class="os-name">Host Tree Identifier</div>
+      <div class="os-detail">12 species · bark + form · 22 MB</div>
+      <div class="dl-bar" id="bar-trees"><div class="dl-fill" id="fill-trees"></div></div>
+    </div>
+    <div class="os-action"><button class="btn-dl" id="btn-trees" onclick="startDownload('trees')">Download</button></div>
+  </div>
+
+  <div class="os-item">
+    <div class="os-icon">🗺️</div>
+    <div class="os-info">
+      <div class="os-name">Offline Topo Maps</div>
+      <div class="os-detail">Your region · 15-mile radius · ~80 MB</div>
+      <div class="dl-bar" id="bar-maps"><div class="dl-fill" id="fill-maps"></div></div>
+    </div>
+    <div class="os-action"><button class="btn-dl" id="btn-maps" onclick="startDownload('maps')">Download</button></div>
+  </div>
+
+  <div class="os-item" style="opacity:.5">
+    <div class="os-icon">🌿</div>
+    <div class="os-info">
+      <div class="os-name">Plant Packs (offline)</div>
+      <div class="os-detail">Purchase a plant pack to unlock</div>
+    </div>
+    <div class="os-action"><button class="btn-dl locked" style="opacity:.5;cursor:default">Locked</button></div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="store-footer">
+  <button class="btn-restore" onclick="restorePurchases()">Restore Purchases</button>
+  <div class="footer-legal">
+    Purchases are processed through Apple App Store or Google Play. Subscriptions auto-renew unless cancelled. All identifications should be verified before consuming any wild plant or mushroom. MorelEye LLC is not liable for misidentification.
+  </div>
+</div>
+
+<!-- PURCHASE MODAL -->
+<div id="purchaseModal">
+  <div class="pm-back" onclick="closePurchase()"></div>
+  <div class="pm-sheet">
+    <div class="pm-handle"></div>
+    <div class="pm-emoji" id="pmEmoji"></div>
+    <div class="pm-name" id="pmName"></div>
+    <div class="pm-price" id="pmPrice"></div>
+    <div class="pm-features" id="pmFeatures"></div>
+    <button class="btn-confirm" id="pmConfirm" onclick="confirmPurchase()">Unlock Pack</button>
+    <button class="btn-cancel" onclick="closePurchase()">Cancel</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// Pack catalog
+const PACKS = {
+  bundle:      { emoji:'⭐', name:'The Full Forager Bundle', price:'$19.99', features:['All 9 mushroom detection packs','All 6 edible plant packs','All 4 medicinal herb packs','Offline AI models for every pack','Seasonal push notifications','Lifetime updates included'] },
+  morel:       { emoji:'🍄', name:'Morel', price:'Included Free', features:['Yellow, grey & black morel detection','Host tree AR overlay with species names','Ground navigation arrow to target trees','Search circle around prime locations','False morel (Gyromitra) safety alerts'] },
+  chicken:     { emoji:'🧡', name:'Chicken of the Woods', price:'$2.99', features:['Shelf fungus detection on host trees','Oak, cherry & locust host ID','Age and freshness estimation','Distinguishes from Jack-o-lantern','Offline mode included'] },
+  chanterelle: { emoji:'🌼', name:'Chanterelle', price:'$2.99', features:['Golden chanterelle detection','False gill vs true gill ID','Jack-o-lantern lookalike alert','Oak and beech forest habitat mapping','Offline mode included'] },
+  oyster:      { emoji:'🤍', name:'Oyster Mushroom', price:'$2.99', features:['Oyster cluster detection on dead wood','Angel wing lookalike alert','Harvest cluster size estimation','Year-round detection — all seasons','Offline mode included'] },
+  hen:         { emoji:'🌿', name:'Hen of the Woods', price:'$2.99', features:['Maitake detection at oak bases','Berkeley\'s polypore comparison','Fall season habitat mapping','Harvest size and freshness guide','Offline mode included'] },
+  lions:       { emoji:'🦁', name:'Lion\'s Mane', price:'$2.99', features:['Cascade detection on dead hardwood','Freshness and harvest gauge','Bear\'s head lookalike notes','Medicinal quality assessment','Offline mode included'] },
+  puffball:    { emoji:'⚪', name:'Giant Puffball', price:'$1.99', features:['White puffball detection in meadows','Amanita egg dangerous lookalike alert','Size and harvest estimation','Interior slice test reminder','Offline mode included'] },
+  matsutake:   { emoji:'🍂', name:'Matsutake', price:'$3.99', features:['Pine mushroom detection under conifers','Pine duff and habitat analysis','Tricholoma lookalike comparison','Aroma and quality notes','Offline mode included'] },
+  turkey:      { emoji:'🦃', name:'Turkey Tail', price:'$1.99', features:['Turkey tail detection on hardwood logs','False turkey tail comparison','Pore surface close-up guidance','Year-round identification','Offline mode included'] },
+  ramps:       { emoji:'🧅', name:'Ramps & Wild Onion', price:'$2.99', features:['Wild leek leaf and bulb detection','Lily-of-the-valley toxic alert','Harvest window by region','Sustainable harvest guidance','Offline mode included'] },
+  berries:     { emoji:'🫐', name:'Wild Berries', price:'$2.99', features:['8 edible berry species detection','Ripeness and harvest assessment','Pokeweed and nightshade alerts','Elderberry preparation notes','Offline mode included'] },
+  greens:      { emoji:'🥬', name:'Spring Greens', price:'$1.99', features:['Ground-level leaf rosette detection','Dandelion, sorrel, violet, chickweed','Seasonal harvest window','Toxic lookalike warnings','Offline mode included'] },
+  nuts:        { emoji:'🌰', name:'Nuts & Seeds', price:'$2.99', features:['Hickory, walnut, hazelnut, pawpaw ID','Bark-based tree identification','Ripeness and harvest assessment','Processing and prep guide','Offline mode included'] },
+  fiddlehead:  { emoji:'🌱', name:'Fiddleheads & Ferns', price:'$1.99', features:['Ostrich fern fiddlehead detection','Harvest stage assessment','Toxic fern species alerts','Creek bottom habitat guidance','Offline mode included'] },
+  roots:       { emoji:'🥕', name:'Roots & Tubers', price:'$2.99', features:['Above-ground plant identification','Cattail, groundnut, burdock, artichoke','Water hemlock dangerous lookalike alert','Prep and cooking notes','Offline mode included'] },
+  adaptogens:  { emoji:'🍵', name:'Adaptogens', price:'$3.99', features:['Reishi, chaga, turkey tail detection','Growth stage and harvest guide','Preparation and extraction notes','Medicinal quality assessment','Offline mode included'] },
+  herbs:       { emoji:'🌾', name:'Wild Herbs', price:'$2.99', features:['Yarrow, goldenrod, echinacea, boneset','Bloom stage identification','Traditional use reference','Toxic lookalike warnings','Offline mode included'] },
+  bark:        { emoji:'🌲', name:'Medicinal Trees', price:'$2.99', features:['Slippery elm, wild cherry, elderberry','Bark identification from camera','Safe harvest guidance','Traditional preparation notes','Offline mode included'] },
+  teas:        { emoji:'🫖', name:'Teas & Tinctures', price:'$1.99', features:['Mint, lemon balm, mullein, red clover','Leaf and flower stage ID','Harvest timing by season','Preparation and drying guide','Offline mode included'] },
+};
+
+let currentPack = null;
+
+function openPurchase(id) {
+  const p = PACKS[id]; if (!p) return;
+  currentPack = id;
+  document.getElementById('pmEmoji').textContent = p.emoji;
+  document.getElementById('pmName').textContent = p.name;
+  document.getElementById('pmPrice').textContent = p.price;
+  document.getElementById('pmFeatures').innerHTML = p.features
+    .map(f => `<div class="pmf"><div class="pmf-dot"></div>${f}</div>`).join('');
+  const btn = document.getElementById('pmConfirm');
+  if (id === 'morel') { btn.textContent = '✓ Already Owned'; btn.style.opacity='.5'; btn.style.cursor='default'; }
+  else { btn.textContent = id==='bundle' ? `Buy for ${p.price}` : `Unlock for ${p.price}`; btn.style.opacity='1'; btn.style.cursor='pointer'; }
+  document.getElementById('purchaseModal').classList.add('show');
+}
+
+function closePurchase() {
+  document.getElementById('purchaseModal').classList.remove('show');
+  currentPack = null;
+}
+
+function confirmPurchase() {
+  if (!currentPack || currentPack === 'morel') return;
+  closePurchase();
+  // In production: trigger StoreKit (iOS) or Google Play Billing here
+  // window.webkit.messageHandlers.purchase.postMessage({ productId: currentPack });
+  showToast(`🔓 ${PACKS[currentPack].name} Unlocked!`);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function restorePurchases() {
+  showToast('✓ Purchases Restored');
+}
+
+// Simulated download progress
+function startDownload(id) {
+  const bar = document.getElementById(`bar-${id}`);
+  const fill = document.getElementById(`fill-${id}`);
+  const btn = document.getElementById(`btn-${id}`);
+  bar.classList.add('show');
+  btn.textContent = '0%'; btn.disabled = true;
+  let pct = 0;
+  const iv = setInterval(() => {
+    pct += Math.random() * 12;
+    if (pct >= 100) { pct = 100; clearInterval(iv);
+      btn.textContent = '✓ Ready'; btn.className = 'btn-dl downloaded'; btn.disabled = false;
+      showToast('✓ Download complete — works offline!');
+    } else { btn.textContent = Math.round(pct)+'%'; }
+    fill.style.width = pct + '%';
+  }, 200);
+}
+</script>
+</body>
+</html>
