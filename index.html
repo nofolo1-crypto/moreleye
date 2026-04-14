@@ -6,1026 +6,637 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MorelEye">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#050f08">
-<meta name="description" content="AI-powered morel mushroom detection for foragers. Identifies morels and host trees in real time using your phone camera.">
-
+<title>MorelEye v2</title>
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-
-<title>MorelEye — AR Morel Detector</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --green: #00ff88;
-  --green-dim: rgba(0,255,136,0.18);
-  --amber: #ffaa00;
-  --red: #ff3355;
-  --blue: #00ccff;
-  --dark: #050f08;
-  --panel: rgba(4,16,9,0.92);
-  --border: rgba(0,255,136,0.22);
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
+:root{--g:#00ff88;--g2:rgba(0,255,136,0.15);--amber:#ffaa00;--red:#ff3355;--blue:#44aaff;--dark:#050f08;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Share Tech Mono',monospace;touch-action:manipulation}
 
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:200;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:36px 26px;transition:opacity .5s}
+#splash.out{opacity:0;pointer-events:none}
+.s-icon{font-size:56px;filter:drop-shadow(0 0 18px var(--g));animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.s-logo{font-family:'Exo 2',sans-serif;font-weight:700;font-size:clamp(2rem,8vw,3rem);color:#fff;text-shadow:0 0 24px var(--g);letter-spacing:-1px}
+.s-logo em{color:var(--g);font-style:normal}
+.s-sub{font-size:.62rem;letter-spacing:4px;color:rgba(0,255,136,.4);text-transform:uppercase;text-align:center}
+.s-feats{display:flex;flex-direction:column;gap:7px;width:100%;max-width:300px;margin:4px 0}
+.sf{display:flex;align-items:center;gap:9px;padding:8px 12px;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.16);border-radius:4px;font-family:'Exo 2',sans-serif;font-size:.75rem;font-weight:300;color:rgba(200,255,220,.88)}
+.sf-i{font-size:1rem;flex-shrink:0}
+.s-btn{width:100%;max-width:300px;padding:14px;background:var(--g);border:none;border-radius:4px;color:var(--dark);font-family:'Share Tech Mono',monospace;font-size:.92rem;letter-spacing:3px;font-weight:bold;text-transform:uppercase;cursor:pointer;box-shadow:0 0 24px rgba(0,255,136,.38)}
+.s-legal{font-size:.54rem;color:rgba(0,255,136,.22);text-align:center;line-height:1.8;max-width:270px}
 
-html, body {
-  height: 100%; width: 100%;
-  overflow: hidden;
-  background: var(--dark);
-  color: var(--green);
-  font-family: 'Share Tech Mono', monospace;
-  -webkit-font-smoothing: antialiased;
-  touch-action: manipulation;
-}
+/* AR VIEW */
+#ar{position:fixed;inset:0;display:none}
+#ar.on{display:block}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#prev{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1}
+#arCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
+#scanlines{position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.05) 3px,rgba(0,0,0,.05) 4px)}
+#vignette{position:absolute;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(3,8,5,.72) 100%)}
+#sweep{position:absolute;inset:0;z-index:4;pointer-events:none;display:none}
+#sweep.on{display:block}
+#sweep::after{content:'';position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g) 40%,var(--g) 60%,transparent);box-shadow:0 0 14px var(--g);animation:sweepA 1.5s ease-in-out infinite}
+@keyframes sweepA{from{top:5%;opacity:1}to{top:95%;opacity:.2}}
 
-/* ══ SPLASH ══════════════════════════════ */
-#splash {
-  position: fixed; inset: 0; z-index: 200;
-  background: var(--dark);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 20px;
-  padding: 40px 30px;
-  transition: opacity 0.5s ease;
-}
-#splash.out { opacity: 0; pointer-events: none; }
+/* HUD TOP */
+#hudTop{position:absolute;top:0;left:0;right:0;z-index:10;padding-top:var(--safe-top);background:linear-gradient(to bottom,rgba(3,8,5,.92) 0%,transparent 100%)}
+.ht-inner{display:flex;align-items:center;justify-content:space-between;padding:9px 15px 13px}
+.ht-logo{font-family:'Exo 2',sans-serif;font-weight:700;font-size:.95rem;color:#fff;text-shadow:0 0 9px var(--g)}
+.ht-logo em{color:var(--g);font-style:normal}
+.ht-live{display:flex;align-items:center;gap:5px;font-size:.56rem;letter-spacing:2px;color:var(--g)}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--g);box-shadow:0 0 5px var(--g);animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.ht-gps{font-size:.52rem;letter-spacing:1px;color:rgba(0,255,136,.45);max-width:145px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.splash-mushroom {
-  font-size: 64px;
-  filter: drop-shadow(0 0 24px var(--green));
-  animation: float 3s ease-in-out infinite;
-}
-@keyframes float {
-  0%,100% { transform: translateY(0); }
-  50%      { transform: translateY(-8px); }
-}
+/* PHASE BANNER */
+#phaseBanner{position:absolute;top:calc(var(--safe-top) + 52px);left:50%;transform:translateX(-50%);z-index:12;padding:6px 18px;border-radius:3px;font-size:.65rem;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;display:none;animation:banIn .3s ease}
+#phaseBanner.show{display:block}
+@keyframes banIn{from{opacity:0;transform:translateX(-50%) translateY(-4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#phaseBanner.idle{background:rgba(4,18,10,.9);color:var(--g);border:1px solid rgba(0,255,136,.25)}
+#phaseBanner.scanning{background:rgba(4,18,10,.9);color:var(--g);border:1px solid rgba(0,255,136,.25)}
+#phaseBanner.tree{background:var(--amber);color:#1a0e00}
+#phaseBanner.nav{background:var(--blue);color:#001525}
+#phaseBanner.circle{background:var(--g);color:var(--dark)}
+#phaseBanner.morel{background:var(--g);color:var(--dark);box-shadow:0 0 22px rgba(0,255,136,.55)}
 
-.splash-logo {
-  font-family: 'Exo 2', sans-serif;
-  font-weight: 700;
-  font-size: clamp(2.4rem, 10vw, 3.5rem);
-  letter-spacing: -1px;
-  color: #fff;
-  text-shadow: 0 0 32px var(--green);
-}
-.splash-logo em { color: var(--green); font-style: normal; }
+/* LOCATION ALERT */
+#locAlert{position:absolute;top:calc(var(--safe-top) + 96px);left:12px;right:12px;z-index:12;background:rgba(4,18,10,.95);border:1px solid rgba(0,255,136,.25);border-left:3px solid var(--g);border-radius:4px;padding:9px 13px;display:none;animation:slideD .4s ease}
+#locAlert.show{display:block}
+@keyframes slideD{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.la-title{font-size:.58rem;letter-spacing:3px;color:var(--g);text-transform:uppercase;margin-bottom:3px}
+.la-text{font-family:'Exo 2',sans-serif;font-size:.75rem;font-weight:300;color:rgba(200,255,220,.82);line-height:1.5}
 
-.splash-sub {
-  font-size: 0.68rem;
-  letter-spacing: 4px;
-  color: rgba(0,255,136,0.5);
-  text-transform: uppercase;
-  text-align: center;
-}
+/* BOTTOM HUD */
+#hudBot{position:absolute;bottom:0;left:0;right:0;z-index:10;padding-bottom:var(--safe-bot);background:linear-gradient(to top,rgba(3,8,5,.97) 62%,transparent 100%)}
+#resCard{margin:0 11px 9px;background:rgba(4,16,9,.96);border:1px solid rgba(0,255,136,.18);border-radius:5px;padding:10px 12px;display:none;animation:slideU .32s ease;max-height:28vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#resCard.show{display:block}
+@keyframes slideU{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.rc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.rc-badge{font-size:.58rem;letter-spacing:2px;padding:3px 8px;border-radius:2px;text-transform:uppercase}
+.bm{background:var(--g);color:var(--dark)}
+.bt{background:var(--amber);color:#1a0e00}
+.bn{background:rgba(0,255,136,.1);color:var(--g);border:1px solid rgba(0,255,136,.22)}
+.be{background:rgba(255,51,85,.12);color:var(--red);border:1px solid rgba(255,51,85,.28)}
+.rc-x{background:transparent;border:none;color:rgba(0,255,136,.3);font-size:.95rem;cursor:pointer;padding:2px 4px}
+.rc-txt{font-family:'Exo 2',sans-serif;font-size:.76rem;line-height:1.6;color:rgba(200,255,220,.82);font-weight:300;white-space:pre-wrap}
+.rc-warn{margin-top:6px;padding:5px 9px;background:rgba(255,170,0,.07);border-left:2px solid var(--amber);font-family:'Exo 2',sans-serif;font-size:.7rem;color:var(--amber);line-height:1.5}
+.conf-row{display:flex;align-items:center;gap:7px;margin-top:7px}
+.conf-lbl{font-size:.53rem;letter-spacing:2px;opacity:.48}
+.conf-track{flex:1;height:2px;background:rgba(0,255,136,.1);border-radius:2px;overflow:hidden}
+.conf-fill{height:100%;background:var(--g);box-shadow:0 0 4px var(--g);width:0;transition:width .7s ease}
+.conf-fill.a{background:var(--amber);box-shadow:0 0 4px var(--amber)}
+.conf-pct{font-size:.53rem;opacity:.5;min-width:26px;text-align:right}
+.ctrls{display:flex;gap:8px;align-items:center;padding:0 11px 11px}
+#scanBtn{flex:1;padding:13px;background:var(--g);border:none;border-radius:4px;color:var(--dark);font-family:'Share Tech Mono',monospace;font-size:.88rem;letter-spacing:3px;font-weight:bold;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(0,255,136,.28);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+#scanBtn:active{transform:scale(.97)}
+#scanBtn.scanning{background:var(--amber);box-shadow:0 0 16px rgba(255,170,0,.32)}
+#scanBtn:disabled{opacity:.4}
+.btn-sm{padding:8px 10px;background:transparent;border:1px solid rgba(0,255,136,.18);border-radius:4px;color:rgba(0,255,136,.65);font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:1px;cursor:pointer;white-space:nowrap}
+.btn-sm:active{background:rgba(0,255,136,.08)}
+.btn-grp{display:flex;flex-direction:column;gap:5px}
+.spin{width:12px;height:12px;border:2px solid rgba(5,15,8,.28);border-top-color:var(--dark);border-radius:50%;animation:spinA .7s linear infinite;display:inline-block}
+@keyframes spinA{to{transform:rotate(360deg)}}
 
-.splash-features {
-  display: flex; flex-direction: column; gap: 10px;
-  width: 100%; max-width: 300px;
-  margin: 8px 0;
-}
-.feat {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 14px;
-  background: var(--green-dim);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-family: 'Exo 2', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 300;
-  color: rgba(200,255,220,0.9);
-}
-.feat-icon { font-size: 1.2rem; flex-shrink: 0; }
+/* GUIDE */
+#guide{position:fixed;inset:0;z-index:100;display:none}
+#guide.show{display:block}
+.g-back{position:absolute;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(3px)}
+.g-panel{position:absolute;bottom:0;left:0;right:0;background:rgba(4,16,9,.98);border-top:1px solid rgba(0,255,136,.18);border-radius:14px 14px 0 0;padding:14px 18px calc(var(--safe-bot) + 18px);max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:shUp .3s ease}
+@keyframes shUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.g-handle{width:32px;height:3px;background:rgba(0,255,136,.18);border-radius:2px;margin:0 auto 12px}
+.g-title{font-size:.6rem;letter-spacing:4px;text-transform:uppercase;color:var(--g);opacity:.6;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid rgba(0,255,136,.1)}
+.gs{margin-bottom:14px}
+.gs h4{font-size:.58rem;letter-spacing:3px;color:var(--amber);text-transform:uppercase;margin-bottom:6px}
+.gs ul{list-style:none}
+.gs li{font-family:'Exo 2',sans-serif;font-size:.74rem;font-weight:300;color:rgba(200,255,220,.8);padding:3px 0 3px 11px;position:relative;border-bottom:1px solid rgba(0,255,136,.03);line-height:1.4}
+.gs li::before{content:'›';position:absolute;left:0;color:var(--g)}
 
-.btn-launch {
-  width: 100%; max-width: 300px;
-  padding: 16px;
-  background: var(--green);
-  border: none;
-  border-radius: 4px;
-  color: var(--dark);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 1rem;
-  letter-spacing: 3px;
-  font-weight: bold;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 0 30px rgba(0,255,136,0.4);
-  transition: all 0.2s;
-  -webkit-appearance: none;
-}
-.btn-launch:active { transform: scale(0.97); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
-
-.splash-legal {
-  font-size: 0.58rem;
-  color: rgba(0,255,136,0.3);
-  text-align: center;
-  line-height: 1.7;
-  max-width: 280px;
-}
-
-/* ══ CAMERA PERMISSION SCREEN ══════════ */
-#perm-screen {
-  position: fixed; inset: 0; z-index: 190;
-  background: var(--dark);
-  display: none;
-  flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 20px;
-  padding: 40px 30px;
-}
-#perm-screen.show { display: flex; }
-
-.perm-icon { font-size: 52px; opacity: 0.8; }
-.perm-title {
-  font-family: 'Exo 2', sans-serif;
-  font-size: 1.3rem; font-weight: 600;
-  color: #fff; text-align: center;
-}
-.perm-text {
-  font-family: 'Exo 2', sans-serif;
-  font-size: 0.82rem; font-weight: 300;
-  color: rgba(200,255,220,0.7);
-  text-align: center; line-height: 1.7;
-  max-width: 300px;
-}
-.btn-allow {
-  padding: 14px 40px;
-  background: var(--green);
-  border: none; border-radius: 4px;
-  color: var(--dark);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.9rem; letter-spacing: 3px;
-  font-weight: bold; text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 0 24px rgba(0,255,136,0.4);
-}
-.btn-photo-only {
-  background: transparent;
-  border: 1px solid var(--border);
-  padding: 12px 30px;
-  border-radius: 4px;
-  color: rgba(0,255,136,0.7);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.75rem; letter-spacing: 2px;
-  cursor: pointer;
-}
-
-/* ══ MAIN AR VIEW ═══════════════════════ */
-#ar-view {
-  position: fixed; inset: 0;
-  display: none;
-  background: #000;
-}
-#ar-view.active { display: block; }
-
-/* Video layer */
-video {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-}
-#preview-img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: none;
-  z-index: 1;
-}
-
-/* AR overlays */
-.ar-overlay {
-  position: absolute; inset: 0;
-  z-index: 3; pointer-events: none;
-}
-
-/* Scanlines */
-#scanlines {
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 3px,
-    rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
-  );
-}
-
-/* Vignette */
-#vignette {
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(3,8,5,0.8) 100%);
-}
-
-/* Corner brackets */
-.corners {
-  position: absolute; inset: 0; z-index: 4; pointer-events: none;
-}
-.c {
-  position: absolute; width: 24px; height: 24px;
-  border-color: var(--green); border-style: solid; border-width: 0;
-  opacity: 0.6;
-}
-.c.tl { top: calc(var(--safe-top) + 58px); left: 14px; border-top-width: 2px; border-left-width: 2px; }
-.c.tr { top: calc(var(--safe-top) + 58px); right: 14px; border-top-width: 2px; border-right-width: 2px; }
-.c.bl { bottom: calc(var(--safe-bottom) + 178px); left: 14px; border-bottom-width: 2px; border-left-width: 2px; }
-.c.br { bottom: calc(var(--safe-bottom) + 178px); right: 14px; border-bottom-width: 2px; border-right-width: 2px; }
-
-/* Scan sweep */
-#sweep {
-  position: absolute; inset: 0; z-index: 5; pointer-events: none;
-  display: none;
-}
-#sweep.on { display: block; }
-#sweep::after {
-  content: '';
-  position: absolute; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--green) 40%, var(--green) 60%, transparent);
-  box-shadow: 0 0 18px var(--green), 0 0 40px rgba(0,255,136,0.3);
-  animation: sweepAnim 1.5s ease-in-out infinite;
-}
-@keyframes sweepAnim {
-  from { top: 5%; opacity: 1; }
-  to   { top: 95%; opacity: 0.3; }
-}
-
-/* Reticle */
-#reticle {
-  position: absolute; z-index: 6; pointer-events: none;
-  top: 42%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px; height: 80px;
-}
-.rring {
-  position: absolute; border-radius: 50%; border: 1px solid var(--green);
-  top: 50%; left: 50%; transform: translate(-50%,-50%);
-}
-.rring.outer { width: 80px; height: 80px; opacity: 0.2; animation: spin 10s linear infinite; }
-.rring.inner { width: 46px; height: 46px; opacity: 0.4; border-style: dashed; animation: spin 6s linear infinite reverse; }
-.rring.dot   { width: 4px; height: 4px; background: var(--green); border: none; opacity: 0.8; }
-@keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-
-/* Detection boxes */
-#detections {
-  position: absolute; inset: 0; z-index: 7; pointer-events: none;
-}
-.dbox {
-  position: absolute; border: 1.5px solid;
-  border-radius: 3px;
-  animation: dboxIn 0.25s ease;
-}
-@keyframes dboxIn { from { opacity:0; transform: scale(0.92); } to { opacity:1; transform: scale(1); } }
-.dbox.morel { border-color: var(--green); box-shadow: 0 0 10px rgba(0,255,136,0.35); }
-.dbox.tree  { border-color: var(--amber); box-shadow: 0 0 10px rgba(255,170,0,0.3); }
-.dbox.habitat { border-color: var(--blue); box-shadow: 0 0 10px rgba(0,204,255,0.25); }
-
-.dbox-lbl {
-  position: absolute; top: -20px; left: -1px;
-  font-size: 0.55rem; letter-spacing: 2px;
-  padding: 2px 7px; text-transform: uppercase; white-space: nowrap;
-}
-.morel .dbox-lbl   { background: var(--green); color: var(--dark); }
-.tree .dbox-lbl    { background: var(--amber); color: var(--dark); }
-.habitat .dbox-lbl { background: var(--blue); color: var(--dark); }
-
-.dbox-conf {
-  position: absolute; bottom: -18px; left: -1px;
-  font-size: 0.52rem; letter-spacing: 1px; opacity: 0.75;
-}
-.morel .dbox-conf   { color: var(--green); }
-.tree .dbox-conf    { color: var(--amber); }
-.habitat .dbox-conf { color: var(--blue); }
-
-.ddot {
-  position: absolute; width: 4px; height: 4px; border-radius: 50%;
-}
-.morel .ddot   { background: var(--green); }
-.tree .ddot    { background: var(--amber); }
-.habitat .ddot { background: var(--blue); }
-.ddot.tl { top:-2px; left:-2px; }
-.ddot.tr { top:-2px; right:-2px; }
-.ddot.bl { bottom:-2px; left:-2px; }
-.ddot.br { bottom:-2px; right:-2px; }
-
-/* ══ HUD TOP BAR ═════════════════════ */
-#hud-top {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
-  padding-top: var(--safe-top);
-  background: linear-gradient(to bottom, rgba(3,8,5,0.9) 0%, transparent 100%);
-}
-.hud-inner {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px 14px;
-}
-.hud-logo {
-  font-family: 'Exo 2', sans-serif;
-  font-weight: 700; font-size: 1rem;
-  color: #fff; text-shadow: 0 0 10px var(--green);
-  letter-spacing: 0.5px;
-}
-.hud-logo em { color: var(--green); font-style: normal; }
-
-.hud-live {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 0.6rem; letter-spacing: 2px;
-}
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 6px var(--green);
-  animation: blink 1.8s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
-.hud-clock { font-size: 0.6rem; opacity: 0.55; letter-spacing: 1px; }
-
-/* ══ ALERT BANNER ════════════════════ */
-#alert {
-  position: absolute;
-  top: calc(var(--safe-top) + 56px);
-  left: 50%; transform: translateX(-50%);
-  z-index: 15; padding: 8px 22px;
-  font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase;
-  border-radius: 3px; white-space: nowrap;
-  display: none;
-  animation: alertIn 0.3s ease;
-}
-#alert.show { display: block; }
-#alert.morel { background: var(--green); color: var(--dark); box-shadow: 0 0 28px rgba(0,255,136,0.6); }
-#alert.tree  { background: var(--amber); color: var(--dark); box-shadow: 0 0 24px rgba(255,170,0,0.5); }
-#alert.clear { background: var(--panel); color: var(--green); border: 1px solid var(--border); }
-@keyframes alertIn { from{opacity:0;transform:translateX(-50%) translateY(-6px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-
-/* ══ BOTTOM PANEL ════════════════════ */
-#hud-bot {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
-  padding-bottom: var(--safe-bottom);
-  background: linear-gradient(to top, rgba(3,8,5,0.97) 60%, transparent 100%);
-}
-
-/* Result card */
-#result-card {
-  margin: 0 12px 10px;
-  background: rgba(4,18,10,0.96);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 12px 14px;
-  display: none;
-  animation: slideUp 0.35s ease;
-  max-height: 36vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-#result-card.show { display: block; }
-@keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-
-.rc-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
-}
-.rc-badge {
-  font-size: 0.62rem; letter-spacing: 2px;
-  padding: 3px 10px; border-radius: 2px; text-transform: uppercase;
-}
-.badge-morel   { background: var(--green); color: var(--dark); }
-.badge-tree    { background: var(--amber); color: var(--dark); }
-.badge-habitat { background: var(--blue); color: var(--dark); }
-.badge-clear   { background: var(--green-dim); color: var(--green); border: 1px solid var(--border); }
-.badge-err     { background: rgba(255,51,85,0.2); color: var(--red); border: 1px solid rgba(255,51,85,0.3); }
-
-.rc-close {
-  background: transparent; border: none;
-  color: rgba(0,255,136,0.4); font-size: 1.1rem;
-  cursor: pointer; padding: 2px 6px; line-height: 1;
-}
-.rc-ts { font-size: 0.55rem; opacity: 0.45; }
-
-.rc-text {
-  font-family: 'Exo 2', sans-serif;
-  font-size: 0.8rem; line-height: 1.65;
-  color: rgba(200,255,220,0.88);
-  font-weight: 300;
-  white-space: pre-wrap;
-}
-
-.rc-caution {
-  margin-top: 8px; padding: 7px 10px;
-  background: rgba(255,170,0,0.08);
-  border-left: 2px solid var(--amber);
-  border-radius: 2px;
-  font-family: 'Exo 2', sans-serif;
-  font-size: 0.75rem; font-weight: 400;
-  color: var(--amber); line-height: 1.5;
-}
-
-.conf-row {
-  display: flex; align-items: center; gap: 10px;
-  margin-top: 10px;
-}
-.conf-lbl { font-size: 0.57rem; letter-spacing: 2px; opacity: 0.55; }
-.conf-track {
-  flex: 1; height: 2px; background: var(--green-dim); border-radius: 2px; overflow: hidden;
-}
-.conf-fill {
-  height: 100%; border-radius: 2px;
-  background: var(--green); box-shadow: 0 0 6px var(--green);
-  width: 0; transition: width 0.7s ease;
-}
-.conf-fill.amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
-.conf-fill.blue  { background: var(--blue);  box-shadow: 0 0 6px var(--blue); }
-.conf-pct { font-size: 0.57rem; opacity: 0.6; min-width: 28px; text-align: right; }
-
-/* Controls */
-.controls {
-  display: flex; gap: 10px; align-items: center;
-  padding: 0 12px 12px;
-}
-
-#scan-btn {
-  flex: 1; padding: 15px;
-  background: var(--green); border: none; border-radius: 5px;
-  color: var(--dark); font-family: 'Share Tech Mono', monospace;
-  font-size: 0.95rem; letter-spacing: 3px; font-weight: bold;
-  text-transform: uppercase; cursor: pointer;
-  box-shadow: 0 0 20px rgba(0,255,136,0.35);
-  transition: all 0.15s;
-  -webkit-appearance: none;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-#scan-btn:active { transform: scale(0.97); }
-#scan-btn.scanning { background: var(--amber); box-shadow: 0 0 20px rgba(255,170,0,0.4); }
-#scan-btn:disabled { opacity: 0.45; }
-
-.btn-icon-group {
-  display: flex; flex-direction: column; gap: 7px;
-}
-.btn-sm {
-  padding: 8px 12px;
-  background: transparent; border: 1px solid var(--border);
-  border-radius: 4px; color: rgba(0,255,136,0.75);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.62rem; letter-spacing: 1px;
-  cursor: pointer; transition: all 0.15s; white-space: nowrap;
-  -webkit-appearance: none;
-}
-.btn-sm:active { background: var(--green-dim); border-color: var(--green); }
-
-/* Camera flip button */
-#flip-btn {
-  position: absolute; top: calc(var(--safe-top) + 56px); right: 14px;
-  z-index: 10; background: var(--panel); border: 1px solid var(--border);
-  border-radius: 50%; width: 40px; height: 40px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; cursor: pointer;
-  -webkit-appearance: none;
-}
-
-/* Torch button */
-#torch-btn {
-  position: absolute; top: calc(var(--safe-top) + 104px); right: 14px;
-  z-index: 10; background: var(--panel); border: 1px solid var(--border);
-  border-radius: 50%; width: 40px; height: 40px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; cursor: pointer;
-  -webkit-appearance: none;
-  display: none;
-}
-#torch-btn.show { display: flex; }
-#torch-btn.on { border-color: var(--amber); background: rgba(255,170,0,0.15); }
-
-/* Guide panel (slide-up sheet) */
-#guide-sheet {
-  position: fixed; inset: 0; z-index: 100;
-  display: none;
-}
-#guide-sheet.show { display: block; }
-.sheet-backdrop {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
-}
-.sheet-panel {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: rgba(4,16,9,0.98);
-  border-top: 1px solid var(--border);
-  border-radius: 16px 16px 0 0;
-  padding: 16px 20px calc(var(--safe-bottom) + 20px);
-  max-height: 75vh; overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  animation: sheetUp 0.3s ease;
-}
-@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-
-.sheet-handle {
-  width: 36px; height: 3px; background: var(--border);
-  border-radius: 2px; margin: 0 auto 16px;
-}
-.sheet-title {
-  font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase;
-  color: var(--green); opacity: 0.7;
-  margin-bottom: 16px; padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-}
-.guide-section { margin-bottom: 18px; }
-.guide-section h4 {
-  font-size: 0.62rem; letter-spacing: 3px; color: var(--amber);
-  text-transform: uppercase; margin-bottom: 8px;
-}
-.guide-section ul { list-style: none; }
-.guide-section li {
-  font-family: 'Exo 2', sans-serif;
-  font-size: 0.78rem; font-weight: 300;
-  color: rgba(200,255,220,0.85);
-  padding: 4px 0 4px 14px;
-  position: relative; line-height: 1.4;
-  border-bottom: 1px solid rgba(0,255,136,0.05);
-}
-.guide-section li::before { content:'›'; position:absolute; left:0; color:var(--green); }
-
-/* Install prompt */
-#install-banner {
-  position: fixed; bottom: calc(var(--safe-bottom) + 180px);
-  left: 12px; right: 12px; z-index: 50;
-  background: rgba(4,18,10,0.97); border: 1px solid var(--green);
-  border-radius: 8px; padding: 14px 16px;
-  display: none; flex-direction: column; gap: 10px;
-  box-shadow: 0 0 24px rgba(0,255,136,0.25);
-  animation: slideUp 0.4s ease;
-}
-#install-banner.show { display: flex; }
-.install-text {
-  font-family: 'Exo 2', sans-serif; font-size: 0.82rem;
-  color: rgba(200,255,220,0.9); font-weight: 300;
-}
-.install-row { display: flex; gap: 10px; }
-.btn-install {
-  flex: 1; padding: 10px;
-  background: var(--green); border: none; border-radius: 4px;
-  color: var(--dark); font-family: 'Share Tech Mono', monospace;
-  font-size: 0.75rem; letter-spacing: 2px;
-  cursor: pointer; font-weight: bold;
-}
-.btn-dismiss {
-  padding: 10px 14px;
-  background: transparent; border: 1px solid var(--border);
-  border-radius: 4px; color: rgba(0,255,136,0.5);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.75rem; cursor: pointer;
-}
-
-/* Spinner */
-.spin {
-  width: 14px; height: 14px;
-  border: 2px solid rgba(5,15,8,0.35);
-  border-top-color: var(--dark);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
-}
-
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-#file-input { display: none; }
-canvas#cap { display: none; }
+#fileIn{display:none}
+canvas#cap{display:none}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(0,255,136,.18);border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- ══ SPLASH ══════════════════════════════════ -->
+<!-- SPLASH -->
 <div id="splash">
-  <div class="splash-mushroom">🍄</div>
-  <div class="splash-logo">Morel<em>Eye</em></div>
-  <div class="splash-sub">AI Forager · Field Detection System</div>
-
-  <div class="splash-features">
-    <div class="feat"><span class="feat-icon">📷</span> Live camera morel detection</div>
-    <div class="feat"><span class="feat-icon">🌳</span> Host tree identification</div>
-    <div class="feat"><span class="feat-icon">⚠️</span> False morel safety alerts</div>
-    <div class="feat"><span class="feat-icon">🗺️</span> Habitat condition analysis</div>
+  <div class="s-icon">🍄</div>
+  <div class="s-logo">Morel<em>Eye</em> <span style="font-size:.45em;opacity:.45;letter-spacing:2px">v2</span></div>
+  <div class="s-sub">AR Navigation · Tree ID · Morel Detection</div>
+  <div class="s-feats">
+    <div class="sf"><span class="sf-i">🌳</span>Tree name labeled on screen over tree</div>
+    <div class="sf"><span class="sf-i">🧭</span>Ground arrow — walk toward target tree</div>
+    <div class="sf"><span class="sf-i">⭕</span>Animated search circle around prime tree</div>
+    <div class="sf"><span class="sf-i">🍄</span>Glowing morel outline on detection</div>
+    <div class="sf"><span class="sf-i">📍</span>GPS habitat alert for your location</div>
   </div>
-
-  <button class="btn-launch" onclick="goToPerm()">Open Scanner</button>
-  <div class="splash-legal">
-    Always verify mushroom identification with an expert before consuming.<br>
-    This app is an AI aid — not a substitute for mycological expertise.
-  </div>
+  <button class="s-btn" onclick="launch()">Launch Scanner</button>
+  <div class="s-legal">Always verify with an expert before consuming any wild mushroom. AI is an aid, not a substitute for expertise.</div>
 </div>
 
-<!-- ══ PERMISSION SCREEN ═══════════════════════ -->
-<div id="perm-screen">
-  <div class="perm-icon">📷</div>
-  <div class="perm-title">Camera Access Needed</div>
-  <div class="perm-text">
-    MorelEye uses your rear camera to scan for morels and host trees in real time.<br><br>
-    Tap <strong style="color:var(--green)">Allow Camera</strong> and grant permission when your phone asks.
-  </div>
-  <button class="btn-allow" onclick="startCamera()">Allow Camera</button>
-  <button class="btn-photo-only" onclick="photoOnlyMode()">Use Photo Upload Only</button>
-</div>
-
-<!-- ══ AR VIEW ══════════════════════════════════ -->
-<div id="ar-view">
-
+<!-- AR VIEW -->
+<div id="ar">
   <video id="cam" autoplay playsinline muted></video>
-  <img id="preview-img" alt="">
-
-  <div class="ar-overlay" id="scanlines"></div>
-  <div class="ar-overlay" id="vignette"></div>
+  <img id="prev" alt="">
+  <canvas id="arCanvas"></canvas>
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
   <div id="sweep"></div>
 
-  <div class="corners">
-    <div class="c tl"></div><div class="c tr"></div>
-    <div class="c bl"></div><div class="c br"></div>
-  </div>
-
-  <div id="reticle">
-    <div class="rring outer"></div>
-    <div class="rring inner"></div>
-    <div class="rring dot"></div>
-  </div>
-
-  <div id="detections"></div>
-
-  <!-- HUD Top -->
-  <div id="hud-top">
-    <div class="hud-inner">
-      <div class="hud-logo">Morel<em>Eye</em></div>
-      <div class="hud-live"><div class="live-dot"></div><span>LIVE</span></div>
-      <div class="hud-clock" id="clock">--:--</div>
+  <div id="hudTop">
+    <div class="ht-inner">
+      <div class="ht-logo">Morel<em>Eye</em></div>
+      <div class="ht-live"><div class="live-dot"></div>LIVE</div>
+      <div class="ht-gps" id="gpsLabel">Locating...</div>
     </div>
   </div>
 
-  <!-- Camera controls -->
-  <button id="flip-btn" onclick="flipCamera()" title="Flip camera">🔄</button>
-  <button id="torch-btn" onclick="toggleTorch()" title="Flashlight">🔦</button>
+  <div id="phaseBanner"></div>
+  <div id="locAlert"><div class="la-title">📍 Habitat Alert</div><div class="la-text" id="locText"></div></div>
 
-  <!-- Alert -->
-  <div id="alert"></div>
-
-  <!-- Bottom HUD -->
-  <div id="hud-bot">
-    <div id="result-card">
+  <div id="hudBot">
+    <div id="resCard">
       <div class="rc-head">
-        <span id="rc-badge" class="rc-badge">—</span>
-        <span id="rc-ts" class="rc-ts"></span>
-        <button class="rc-close" onclick="closeResult()">✕</button>
+        <span id="rcBadge" class="rc-badge bn">—</span>
+        <button class="rc-x" onclick="closeRes()">✕</button>
       </div>
-      <div id="rc-text" class="rc-text"></div>
-      <div id="rc-caution" class="rc-caution" style="display:none"></div>
+      <div class="rc-txt" id="rcTxt"></div>
+      <div id="rcWarn" class="rc-warn" style="display:none"></div>
       <div class="conf-row">
         <span class="conf-lbl">CONFIDENCE</span>
-        <div class="conf-track"><div class="conf-fill" id="conf-fill"></div></div>
-        <span class="conf-pct" id="conf-pct">--%</span>
+        <div class="conf-track"><div class="conf-fill" id="confFill"></div></div>
+        <span class="conf-pct" id="confPct">--%</span>
       </div>
     </div>
-
-    <div class="controls">
-      <div class="btn-icon-group">
-        <button class="btn-sm" onclick="document.getElementById('file-input').click()">📁 PHOTO</button>
+    <div class="ctrls">
+      <div class="btn-grp">
+        <button class="btn-sm" onclick="document.getElementById('fileIn').click()">📁 PHOTO</button>
         <button class="btn-sm" onclick="showGuide()">📋 GUIDE</button>
       </div>
-      <button id="scan-btn" onclick="doScan()">⬤&nbsp; SCAN</button>
-    </div>
-  </div>
-
-</div>
-
-<!-- ══ FIELD GUIDE SHEET ════════════════════════ -->
-<div id="guide-sheet">
-  <div class="sheet-backdrop" onclick="hideGuide()"></div>
-  <div class="sheet-panel">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">🍄 Morel Field Guide</div>
-
-    <div class="guide-section">
-      <h4>Morel Identification</h4>
-      <ul>
-        <li>Distinctive honeycomb / pitted cap with ridges</li>
-        <li>Fully hollow when sliced vertically — key test</li>
-        <li>Cap is fused to stem at the base</li>
-        <li>Colors: tan, grey, yellow, or black-brown</li>
-        <li>Typical height 2–6 inches; appears in spring</li>
-        <li>Found after rains when soil hits ~50–60°F</li>
-      </ul>
-    </div>
-
-    <div class="guide-section">
-      <h4>Prime Host Trees</h4>
-      <ul>
-        <li>Dead / dying elm — single best indicator</li>
-        <li>Ash trees killed by Emerald Ash Borer</li>
-        <li>Old apple &amp; other fruit trees / orchards</li>
-        <li>Tulip poplar (yellow poplar)</li>
-        <li>Sycamore and cottonwood near water</li>
-        <li>Mature oak stands (late season)</li>
-      </ul>
-    </div>
-
-    <div class="guide-section">
-      <h4>Habitat Cues</h4>
-      <ul>
-        <li>South-facing slopes warm up first in spring</li>
-        <li>Floodplains, creek banks, moist hollows</li>
-        <li>Recent logging or fire-disturbed ground</li>
-        <li>Loose, leaf-littered, well-drained soil</li>
-        <li>Look uphill from water sources</li>
-      </ul>
-    </div>
-
-    <div class="guide-section">
-      <h4>⚠ False Morel Warning</h4>
-      <ul>
-        <li>Gyromitra — brain-like wrinkled cap, NOT pitted</li>
-        <li>Cap is NOT fused to stem — hangs loosely</li>
-        <li>Interior is chambered, not fully hollow</li>
-        <li>Contains gyromitrin — toxic, potentially fatal</li>
-        <li>Always do the hollow slice test before eating</li>
-      </ul>
+      <button id="scanBtn" onclick="doScan()">⬤ &nbsp;SCAN</button>
     </div>
   </div>
 </div>
 
-<!-- Install banner -->
-<div id="install-banner">
-  <div class="install-text">📲 Add MorelEye to your home screen for full offline access.</div>
-  <div class="install-row">
-    <button class="btn-install" id="install-btn">Add to Home Screen</button>
-    <button class="btn-dismiss" onclick="dismissInstall()">Later</button>
+<!-- GUIDE SHEET -->
+<div id="guide">
+  <div class="g-back" onclick="hideGuide()"></div>
+  <div class="g-panel">
+    <div class="g-handle"></div>
+    <div class="g-title">🍄 Morel Field Guide</div>
+    <div class="gs"><h4>AR Overlay Guide</h4><ul>
+      <li>Orange box + label = host tree detected on screen</li>
+      <li>Blue arrow on ground = walk toward that tree</li>
+      <li>Green dashed circle = prime search zone around tree</li>
+      <li>Green glowing outline = morel mushroom detected</li>
+    </ul></div>
+    <div class="gs"><h4>Morel ID</h4><ul>
+      <li>Honeycomb / pitted cap — not smooth</li>
+      <li>Fully hollow when sliced vertically</li>
+      <li>Cap fused to stem at base</li>
+      <li>Tan, grey, yellow-brown, or black</li>
+      <li>2–6 inches tall; season March–May</li>
+    </ul></div>
+    <div class="gs"><h4>Host Trees</h4><ul>
+      <li>Dead / dying elm — best single indicator</li>
+      <li>Ash killed by Emerald Ash Borer</li>
+      <li>Old apple and fruit trees</li>
+      <li>Tulip poplar, sycamore, cottonwood</li>
+      <li>Mature oaks — later in season</li>
+    </ul></div>
+    <div class="gs"><h4>⚠ False Morel Warning</h4><ul>
+      <li>Gyromitra — brain-like cap, NOT pitted</li>
+      <li>Cap NOT fused to stem</li>
+      <li>Not fully hollow inside</li>
+      <li>TOXIC — always do the hollow slice test</li>
+    </ul></div>
   </div>
 </div>
 
+<input type="file" id="fileIn" accept="image/*" capture="environment" onchange="handleFile(event)">
 <canvas id="cap"></canvas>
-<input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFile(event)">
 
 <script>
 // ═══════════════════════════════════════════════════
-//  MorelEye — Mobile AR Morel Detection App
-//  Claude Vision AI · PWA · iOS & Android
+//  MorelEye v2 — Full AR Canvas Overlay System
 // ═══════════════════════════════════════════════════
 
-// AI system prompt lives in /api/scan.js on the server — not exposed client-side
+let stream = null, scanning = false, uploadedB64 = null;
+let arCanvas, ctx;
+let detectedTrees = [], detectedMorels = [];
+let navTarget = null, circleTree = null;
+let phase = 'idle';
+let pulseT = 0, navAnim = 0;
 
-// ── State ─────────────────────────────────────────
-let camStream = null;
-let facingMode = 'environment';
-let torch = false;
-let torchTrack = null;
-let scanning = false;
-let uploadedB64 = null;
-let deferredInstall = null;
-
-// ── Clock ─────────────────────────────────────────
-function tick() {
-  const t = new Date();
-  document.getElementById('clock').textContent =
-    t.getHours().toString().padStart(2,'0') + ':' +
-    t.getMinutes().toString().padStart(2,'0');
-}
-setInterval(tick, 10000); tick();
-
-// ── Splash → Perm ─────────────────────────────────
-function goToPerm() {
-  // Check if camera API exists
-  if (!navigator.mediaDevices?.getUserMedia) {
-    photoOnlyMode(); return;
-  }
+// ── Launch ─────────────────────────────────────────
+async function launch() {
   document.getElementById('splash').classList.add('out');
-  setTimeout(() => {
+  setTimeout(async () => {
     document.getElementById('splash').style.display = 'none';
-    document.getElementById('perm-screen').classList.add('show');
-  }, 500);
+    document.getElementById('ar').classList.add('on');
+    initCanvas();
+    startLoop();
+    await initCam();
+    getLocation();
+    setPhase('idle');
+  }, 480);
 }
 
-// ── Start camera ──────────────────────────────────
-async function startCamera() {
-  document.getElementById('perm-screen').classList.remove('show');
-  document.getElementById('ar-view').style.display = 'block';
-  document.getElementById('ar-view').classList.add('active');
-  await initCam();
+// ── Canvas setup ───────────────────────────────────
+function initCanvas() {
+  arCanvas = document.getElementById('arCanvas');
+  ctx = arCanvas.getContext('2d');
+  resize(); window.addEventListener('resize', resize);
 }
+function resize() { arCanvas.width = window.innerWidth; arCanvas.height = window.innerHeight; }
 
-function photoOnlyMode() {
-  document.getElementById('perm-screen').classList.remove('show');
-  document.getElementById('ar-view').style.display = 'block';
-  document.getElementById('ar-view').classList.add('active');
-  document.getElementById('flip-btn').style.display = 'none';
-}
-
-async function initCam(facing) {
-  const mode = facing || facingMode;
-  if (camStream) { camStream.getTracks().forEach(t => t.stop()); }
+// ── Camera ─────────────────────────────────────────
+async function initCam() {
   try {
-    const constraints = {
-      video: {
-        facingMode: { ideal: mode },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
-      }
-    };
-    camStream = await navigator.mediaDevices.getUserMedia(constraints);
-    const vid = document.getElementById('cam');
-    vid.srcObject = camStream;
-    vid.style.display = 'block';
-    document.getElementById('preview-img').style.display = 'none';
-    uploadedB64 = null;
-
-    // Torch availability
-    torchTrack = camStream.getVideoTracks()[0];
-    const caps = torchTrack?.getCapabilities?.() || {};
-    if (caps.torch) {
-      document.getElementById('torch-btn').classList.add('show');
-    }
-  } catch(e) {
-    console.warn('Camera error:', e);
-  }
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+    document.getElementById('cam').srcObject = stream;
+  } catch(e) { console.warn(e); }
 }
 
-async function flipCamera() {
-  facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  await initCam(facingMode);
-}
-
-async function toggleTorch() {
-  if (!torchTrack) return;
-  torch = !torch;
-  try {
-    await torchTrack.applyConstraints({ advanced: [{ torch }] });
-    document.getElementById('torch-btn').classList.toggle('on', torch);
-  } catch(e) { console.warn('Torch not supported'); }
-}
-
-// ── File upload ───────────────────────────────────
 function handleFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
     uploadedB64 = ev.target.result.split(',')[1];
-    const prev = document.getElementById('preview-img');
-    prev.src = ev.target.result;
-    prev.style.display = 'block';
+    document.getElementById('prev').src = ev.target.result;
+    document.getElementById('prev').style.display = 'block';
     document.getElementById('cam').style.display = 'none';
-    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
   };
-  reader.readAsDataURL(file);
+  r.readAsDataURL(file);
 }
 
-// ── Capture from video ────────────────────────────
 function captureFrame() {
-  const vid = document.getElementById('cam');
-  if (!vid.videoWidth) return null;
+  const v = document.getElementById('cam');
+  if (!v.videoWidth) return null;
   const c = document.getElementById('cap');
-  c.width = vid.videoWidth; c.height = vid.videoHeight;
-  c.getContext('2d').drawImage(vid, 0, 0);
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
   return c.toDataURL('image/jpeg', 0.82).split(',')[1];
 }
 
-// ── Main scan ─────────────────────────────────────
+// ── GPS ────────────────────────────────────────────
+function getLocation() {
+  if (!navigator.geolocation) { document.getElementById('gpsLabel').textContent = 'No GPS'; return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    document.getElementById('gpsLabel').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    // Season + latitude habitat check
+    const mo = new Date().getMonth() + 1;
+    if (mo >= 3 && mo <= 5 && lat > 35 && lat < 50)
+      showLocAlert('Prime morel season & latitude. Hunt south-facing slopes near dead elms and creek bottoms.');
+    else if (mo >= 3 && mo <= 5)
+      showLocAlert('Peak morel season. Look for host trees when soil temp hits 50–60°F.');
+  }, () => document.getElementById('gpsLabel').textContent = 'GPS off', { enableHighAccuracy: true });
+}
+
+function showLocAlert(msg) {
+  document.getElementById('locText').textContent = msg;
+  const el = document.getElementById('locAlert');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 10000);
+}
+
+// ── Scan ───────────────────────────────────────────
 async function doScan() {
   if (scanning) return;
-  scanning = true;
-
-  const btn = document.getElementById('scan-btn');
-  btn.disabled = true;
-  btn.classList.add('scanning');
+  scanning = true; setPhase('scanning');
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true; btn.classList.add('scanning');
   btn.innerHTML = '<span class="spin"></span>&nbsp;ANALYZING';
   document.getElementById('sweep').classList.add('on');
-  clearDetections(); closeResult(); hideAlert();
+  closeRes();
 
   const b64 = uploadedB64 || captureFrame();
-  if (!b64) {
-    showErr('No image available. Tap 📁 PHOTO to upload an image.');
-    resetBtn(); return;
-  }
+  if (!b64) { showErr('No image. Tap 📁 PHOTO.'); resetBtn(); return; }
 
   try {
-    // Calls your secure Vercel serverless proxy — API key never exposed to client
     const res = await fetch('/api/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageB64: b64 })
     });
-
     const result = await res.json();
-
-    if (!res.ok) {
-      showErr(result.error || 'Scan failed. Try again.');
-    } else {
-      renderResult(result);
-    }
-
-  } catch(err) {
-    console.error(err);
-    showErr('Scan failed. Check your connection and try again.');
-  }
-
+    if (!res.ok) showErr(result.error || 'Scan failed.');
+    else processResult(result);
+  } catch(e) { showErr('Connection error. Try again.'); }
   resetBtn();
 }
 
 function resetBtn() {
   scanning = false;
-  const btn = document.getElementById('scan-btn');
-  btn.disabled = false;
-  btn.classList.remove('scanning');
-  btn.innerHTML = '⬤&nbsp; SCAN';
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = false; btn.classList.remove('scanning');
+  btn.innerHTML = '⬤ &nbsp;SCAN';
   document.getElementById('sweep').classList.remove('on');
 }
 
-// ── Render result ─────────────────────────────────
-function renderResult(r) {
-  const statusMap = {
-    MOREL_FOUND:       { badge:'badge-morel',   label:'🍄 Morel Detected', alert:'morel', msg:'🍄 MOREL FOUND!', fill:'' },
-    HOST_TREE:         { badge:'badge-tree',    label:'🌳 Host Tree',       alert:'tree',  msg:'🌳 HOST TREE!',  fill:'amber' },
-    FAVORABLE_HABITAT: { badge:'badge-habitat', label:'✓ Prime Habitat',   alert:'tree',  msg:'✓ PRIME HABITAT', fill:'blue' },
-    CLEAR:             { badge:'badge-clear',   label:'○ Area Clear',      alert:'clear', msg:'○ NO MORELS',    fill:'' },
-    UNCLEAR:           { badge:'badge-clear',   label:'? Unclear Image',   alert:'clear', msg:'? UNCLEAR',      fill:'' },
+// ── Process result ─────────────────────────────────
+function processResult(r) {
+  const W = arCanvas.width, H = arCanvas.height;
+  detectedTrees = []; detectedMorels = [];
+  navTarget = null; circleTree = null;
+
+  (r.detections || []).forEach(d => {
+    const obj = {
+      label: d.label, conf: d.confidence,
+      x: (d.x/100)*W, y: (d.y/100)*H,
+      w: (d.w/100)*W, h: (d.h/100)*H
+    };
+    if (d.type === 'tree') detectedTrees.push(obj);
+    else if (d.type === 'morel') detectedMorels.push(obj);
+  });
+
+  if (r.status === 'MOREL_FOUND' && detectedMorels.length > 0) {
+    circleTree = detectedTrees[0] || null;
+    setPhase('morel_found');
+  } else if (r.status === 'HOST_TREE' && detectedTrees.length > 0) {
+    navTarget = detectedTrees[0];
+    circleTree = detectedTrees[0];
+    setPhase('circle');
+  } else if (r.status === 'FAVORABLE_HABITAT') {
+    setPhase('tree_found');
+    if (r.habitat_note) showLocAlert(r.habitat_note);
+  } else {
+    setPhase('idle');
+  }
+
+  renderCard(r);
+  if (r.habitat_note) showLocAlert(r.habitat_note);
+}
+
+// ── Phase ──────────────────────────────────────────
+function setPhase(p) {
+  phase = p;
+  const el = document.getElementById('phaseBanner');
+  const map = {
+    idle:        { cls:'idle',     txt:'○ Tap SCAN to detect' },
+    scanning:    { cls:'scanning', txt:'◉ Analyzing scene...' },
+    tree_found:  { cls:'tree',     txt:'🌳 Host tree nearby — scan area' },
+    circle:      { cls:'circle',   txt:'⭕ Search within circle — tap SCAN' },
+    morel_found: { cls:'morel',    txt:'🍄 MOREL DETECTED!' },
   };
-  const s = statusMap[r.status] || statusMap['UNCLEAR'];
-
-  document.getElementById('rc-badge').className = 'rc-badge ' + s.badge;
-  document.getElementById('rc-badge').textContent = s.label;
-  document.getElementById('rc-ts').textContent = new Date().toTimeString().slice(0,8);
-
-  const mainText = [r.primary, r.details].filter(Boolean).join('\n\n');
-  document.getElementById('rc-text').textContent = mainText;
-
-  const caut = document.getElementById('rc-caution');
-  if (r.caution) { caut.textContent = '⚠ ' + r.caution; caut.style.display = 'block'; }
-  else { caut.style.display = 'none'; }
-
-  const fill = document.getElementById('conf-fill');
-  fill.className = 'conf-fill' + (s.fill ? ' '+s.fill : '');
-  fill.style.width = (r.confidence||0) + '%';
-  document.getElementById('conf-pct').textContent = (r.confidence||0) + '%';
-
-  document.getElementById('result-card').classList.add('show');
-  flashAlert(s.alert, s.msg);
-
-  (r.detections || []).forEach(d => drawBox(d));
-  setTimeout(hideAlert, 5000);
-}
-
-function drawBox(d) {
-  const wrap = document.getElementById('detections');
-  const el = document.createElement('div');
-  el.className = 'dbox ' + d.type;
-  el.style.cssText = `left:${d.x}%;top:${d.y}%;width:${d.w}%;height:${d.h}%`;
-  el.innerHTML = `
-    <div class="dbox-lbl">${d.label}</div>
-    <div class="dbox-conf">${d.confidence}% match</div>
-    <div class="ddot tl"></div><div class="ddot tr"></div>
-    <div class="ddot bl"></div><div class="ddot br"></div>`;
-  wrap.appendChild(el);
-}
-
-function clearDetections() { document.getElementById('detections').innerHTML = ''; }
-
-// ── Alert ─────────────────────────────────────────
-function flashAlert(type, msg) {
-  const el = document.getElementById('alert');
-  el.className = 'show ' + type;
-  el.textContent = msg;
+  const m = map[p] || map.idle;
+  el.className = `show ${m.cls}`;
+  el.textContent = m.txt;
   el.style.display = 'block';
+  if (p === 'idle') setTimeout(() => { if (phase==='idle') el.style.display='none'; }, 4000);
 }
-function hideAlert() {
-  const el = document.getElementById('alert');
-  el.style.display = 'none';
-}
-function closeResult() { document.getElementById('result-card').classList.remove('show'); }
 
+// ── Result card ────────────────────────────────────
+function renderCard(r) {
+  const sm = { MOREL_FOUND:{cls:'bm',lbl:'🍄 Morel Detected'}, HOST_TREE:{cls:'bt',lbl:'🌳 Host Tree'}, FAVORABLE_HABITAT:{cls:'bt',lbl:'✓ Prime Habitat'}, CLEAR:{cls:'bn',lbl:'○ Area Clear'}, UNCLEAR:{cls:'bn',lbl:'? Unclear'} };
+  const s = sm[r.status] || sm.CLEAR;
+  document.getElementById('rcBadge').className = `rc-badge ${s.cls}`;
+  document.getElementById('rcBadge').textContent = s.lbl;
+  document.getElementById('rcTxt').textContent = [r.primary, r.details].filter(Boolean).join('\n\n');
+  const w = document.getElementById('rcWarn');
+  if (r.caution) { w.textContent = '⚠ '+r.caution; w.style.display='block'; } else w.style.display='none';
+  const f = document.getElementById('confFill');
+  f.className = 'conf-fill'+(r.status==='HOST_TREE'?' a':'');
+  f.style.width = (r.confidence||0)+'%';
+  document.getElementById('confPct').textContent = (r.confidence||0)+'%';
+  document.getElementById('resCard').classList.add('show');
+}
+function closeRes() { document.getElementById('resCard').classList.remove('show'); }
 function showErr(msg) {
-  document.getElementById('rc-badge').className = 'rc-badge badge-err';
-  document.getElementById('rc-badge').textContent = '✗ Error';
-  document.getElementById('rc-text').textContent = msg;
-  document.getElementById('rc-caution').style.display = 'none';
-  document.getElementById('conf-fill').style.width = '0';
-  document.getElementById('conf-pct').textContent = '0%';
-  document.getElementById('rc-ts').textContent = new Date().toTimeString().slice(0,8);
-  document.getElementById('result-card').classList.add('show');
+  document.getElementById('rcBadge').className='rc-badge be';
+  document.getElementById('rcBadge').textContent='✗ Error';
+  document.getElementById('rcTxt').textContent=msg;
+  document.getElementById('rcWarn').style.display='none';
+  document.getElementById('confFill').style.width='0';
+  document.getElementById('confPct').textContent='0%';
+  document.getElementById('resCard').classList.add('show');
 }
 
-// ── Guide ─────────────────────────────────────────
-function showGuide() { document.getElementById('guide-sheet').classList.add('show'); }
-function hideGuide() { document.getElementById('guide-sheet').classList.remove('show'); }
+// ═══════════════════════════════════════════════════
+//  AR CANVAS RENDER LOOP
+// ═══════════════════════════════════════════════════
 
-// ── PWA Install ───────────────────────────────────
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredInstall = e;
-  document.getElementById('install-banner').classList.add('show');
-  document.getElementById('install-btn').onclick = async () => {
-    deferredInstall.prompt();
-    const { outcome } = await deferredInstall.userChoice;
-    if (outcome === 'accepted') dismissInstall();
-  };
-});
-function dismissInstall() {
-  document.getElementById('install-banner').classList.remove('show');
+function startLoop() {
+  function loop(ts) {
+    pulseT = ts * 0.002;
+    navAnim = (ts * 0.0008) % 1;
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
 }
 
-// ── Service Worker ────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+function draw() {
+  const W = arCanvas.width, H = arCanvas.height;
+  ctx.clearRect(0, 0, W, H);
+  drawCorners(W, H);
+  drawReticle(W, H);
+  detectedTrees.forEach(t => drawTreeLabel(t));
+  if (navTarget && (phase==='circle'||phase==='morel_found')) drawNavArrow(navTarget, W, H);
+  if (circleTree && (phase==='circle'||phase==='morel_found')) drawSearchCircle(circleTree);
+  detectedMorels.forEach(m => drawMorelOutline(m));
 }
+
+// ── Corner brackets ────────────────────────────────
+function drawCorners(W, H) {
+  const s=20, top=52, bot=176;
+  ctx.strokeStyle='rgba(0,255,136,.52)'; ctx.lineWidth=1.5;
+  [[top,top,s,s],[W-top,top,-s,s],[top,H-bot,s,-s],[W-top,H-bot,-s,-s]].forEach(([x,y,dx,dy])=>{
+    ctx.beginPath(); ctx.moveTo(x+dx,y); ctx.lineTo(x,y); ctx.lineTo(x,y+dy); ctx.stroke();
+  });
+}
+
+// ── Reticle ────────────────────────────────────────
+function drawReticle(W, H) {
+  const cx=W/2, cy=H*0.42, p=Math.sin(pulseT)*0.12+0.88;
+  ctx.beginPath(); ctx.arc(cx,cy,40*p,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,255,136,.16)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,24,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,255,136,.38)'; ctx.lineWidth=1;
+  ctx.setLineDash([4,4]); ctx.lineDashOffset=-pulseT*7; ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='rgba(0,255,136,.55)'; ctx.lineWidth=1;
+  [[cx-7,cy,cx+7,cy],[cx,cy-7,cx,cy+7]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+}
+
+// ── Tree label overlay ─────────────────────────────
+function drawTreeLabel(t) {
+  const { x, y, w, h, label, conf } = t;
+  const cx = x+w/2;
+  const alpha = 0.65 + Math.sin(pulseT*0.6)*0.2;
+
+  // Dashed amber bounding box
+  ctx.strokeStyle=`rgba(255,170,0,${alpha})`; ctx.lineWidth=1.5;
+  ctx.setLineDash([7,4]); ctx.strokeRect(x,y,w,h); ctx.setLineDash([]);
+
+  // Corner accent dots
+  [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(([dx,dy])=>{
+    ctx.beginPath(); ctx.arc(dx,dy,3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,170,0,${alpha})`; ctx.fill();
+  });
+
+  // Label pill above box
+  ctx.font='bold 11px "Share Tech Mono",monospace';
+  const txt = label.toUpperCase();
+  const tw = ctx.measureText(txt).width;
+  const lx=cx-tw/2-10, ly=y-36, lw=tw+20, lh=20;
+  ctx.fillStyle=`rgba(255,140,0,${alpha*0.92})`;
+  rr(lx,ly,lw,lh,3); ctx.fill();
+  ctx.fillStyle='#1a0e00'; ctx.textAlign='center';
+  ctx.fillText(txt, cx, ly+13);
+
+  // Confidence text
+  ctx.font='9px "Share Tech Mono",monospace';
+  ctx.fillStyle=`rgba(255,170,0,${alpha*0.75})`;
+  ctx.fillText(`${conf}% MATCH`, cx, ly+lh+11);
+
+  // Leader line
+  ctx.beginPath(); ctx.moveTo(cx,ly+lh+2); ctx.lineTo(cx,y);
+  ctx.strokeStyle=`rgba(255,170,0,${alpha*0.45})`; ctx.lineWidth=1;
+  ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+}
+
+// ── Navigation arrow (ground) ──────────────────────
+function drawNavArrow(target, W, H) {
+  const tcx = target.x+target.w/2;
+  const scx = W/2;
+  const xOff = (tcx-scx)*0.28;
+  const baseX = scx+xOff;
+  const baseY = H*0.70;
+  const bounce = Math.sin(navAnim*Math.PI*2)*7;
+  const ax = baseX, ay = baseY+bounce;
+  const aH=52, aW=17;
+
+  // Ground ellipse shadow
+  ctx.beginPath(); ctx.ellipse(baseX+xOff*0.3,baseY+18,28,7,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(68,170,255,.12)'; ctx.fill();
+  ctx.strokeStyle='rgba(68,170,255,.35)'; ctx.lineWidth=1; ctx.stroke();
+
+  // Arrow body
+  ctx.save(); ctx.translate(ax, ay);
+  ctx.rotate(Math.atan2(tcx-scx, H*0.45)*0.35);
+  ctx.beginPath();
+  ctx.moveTo(0,-aH/2);
+  ctx.lineTo(aW/2,-aH/2+16); ctx.lineTo(aW/4,-aH/2+16);
+  ctx.lineTo(aW/4,aH/2); ctx.lineTo(-aW/4,aH/2);
+  ctx.lineTo(-aW/4,-aH/2+16); ctx.lineTo(-aW/2,-aH/2+16);
+  ctx.closePath();
+  const g=ctx.createLinearGradient(0,-aH/2,0,aH/2);
+  g.addColorStop(0,'rgba(68,170,255,.92)'); g.addColorStop(1,'rgba(68,170,255,.28)');
+  ctx.fillStyle=g; ctx.fill();
+  ctx.strokeStyle='rgba(68,170,255,.8)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.restore();
+
+  // Label
+  ctx.font='bold 9px "Share Tech Mono",monospace';
+  ctx.fillStyle='rgba(68,170,255,.78)'; ctx.textAlign='center';
+  ctx.fillText('WALK THIS WAY', baseX+xOff*0.3, baseY+32);
+}
+
+// ── Search circle ──────────────────────────────────
+function drawSearchCircle(tree) {
+  const cx=tree.x+tree.w/2, cy=tree.y+tree.h/2;
+  const baseR=Math.max(tree.w,tree.h)*0.78+28;
+  const r=baseR+Math.sin(pulseT*1.4)*5;
+  const alpha=0.65+Math.sin(pulseT)*0.22;
+
+  // Glow halo
+  ctx.beginPath(); ctx.arc(cx,cy,r+10,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,255,136,.07)'; ctx.lineWidth=16; ctx.stroke();
+
+  // Main animated dashed circle
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(0,255,136,${alpha})`;
+  ctx.lineWidth=2; ctx.setLineDash([14,6]);
+  ctx.lineDashOffset=-pulseT*14; ctx.stroke(); ctx.setLineDash([]);
+
+  // Inner ghost circle
+  ctx.beginPath(); ctx.arc(cx,cy,r*0.58,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,255,136,.2)'; ctx.lineWidth=1;
+  ctx.setLineDash([4,9]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Tick marks
+  for(let i=0;i<8;i++){
+    const a=(i/8)*Math.PI*2-Math.PI/2;
+    const tl=i%2===0?9:5;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
+    ctx.lineTo(cx+Math.cos(a)*(r+tl), cy+Math.sin(a)*(r+tl));
+    ctx.strokeStyle=`rgba(0,255,136,${alpha*0.7})`; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  // "SEARCH ZONE" pill label above circle
+  const ly=cy-r-16;
+  ctx.font='bold 10px "Share Tech Mono",monospace';
+  const lt='⭕  SEARCH ZONE', ltw=ctx.measureText(lt).width;
+  ctx.fillStyle=`rgba(0,255,136,${alpha*0.88})`;
+  rr(cx-ltw/2-9, ly-13, ltw+18, 18, 3); ctx.fill();
+  ctx.fillStyle='#050f08'; ctx.textAlign='center';
+  ctx.fillText(lt, cx, ly);
+}
+
+// ── Morel outline ──────────────────────────────────
+function drawMorelOutline(m) {
+  const {x,y,w,h,conf}=m;
+  const cx=x+w/2, cy=y+h/2;
+  const glow=0.55+Math.sin(pulseT*2)*0.35;
+
+  // Outer glow halo
+  ctx.beginPath(); ctx.ellipse(cx,cy,w/2+16,h/2+16,0,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(0,255,136,${glow*0.18})`; ctx.lineWidth=14; ctx.stroke();
+
+  // Main glowing outline
+  ctx.beginPath(); ctx.ellipse(cx,cy,w/2+6,h/2+6,0,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(0,255,136,${glow})`; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Inner shape
+  ctx.beginPath(); ctx.ellipse(cx,cy,w/2,h/2,0,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(180,255,220,${glow*0.65})`; ctx.lineWidth=1; ctx.stroke();
+
+  // Animated scan line across morel
+  const sy=y+((pulseT/6.28)%1)*h;
+  ctx.beginPath(); ctx.moveTo(x,sy); ctx.lineTo(x+w,sy);
+  ctx.strokeStyle=`rgba(0,255,136,.45)`; ctx.lineWidth=1; ctx.stroke();
+
+  // Label pill above
+  const ly=y-28;
+  ctx.font='bold 11px "Share Tech Mono",monospace';
+  const lt='🍄  MOREL', ltw=ctx.measureText(lt).width;
+  ctx.fillStyle=`rgba(0,255,136,${glow*0.95})`;
+  rr(cx-ltw/2-10, ly-14, ltw+20, 20, 3); ctx.fill();
+  ctx.fillStyle='#050f08'; ctx.textAlign='center';
+  ctx.fillText(lt, cx, ly);
+  ctx.font='9px "Share Tech Mono",monospace';
+  ctx.fillStyle=`rgba(0,255,136,${glow*0.75})`;
+  ctx.fillText(`${conf}% MATCH`, cx, ly+13);
+
+  // Leader line
+  ctx.beginPath(); ctx.moveTo(cx,ly+5); ctx.lineTo(cx,y);
+  ctx.strokeStyle=`rgba(0,255,136,.38)`; ctx.lineWidth=1;
+  ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+}
+
+// ── Rounded rect helper ────────────────────────────
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+function showGuide() { document.getElementById('guide').classList.add('show'); }
+function hideGuide() { document.getElementById('guide').classList.remove('show'); }
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
